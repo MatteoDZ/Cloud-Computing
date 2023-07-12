@@ -47,32 +47,8 @@ public class Point implements Writable {
         return new Point(1, coordinatesArray);
     }
 
-    // parsePoint given a point formatted in csv returns a point
-    public static Point parsePoint(String value) throws IllegalArgumentException {
-        List<Double> coordinates = new ArrayList<>();
-        StringTokenizer tokenizer = new StringTokenizer(value, ",");
-        while (tokenizer.hasMoreTokens()) {
-            coordinates.add(Double.parseDouble(tokenizer.nextToken()));
-        }
-
-        if (coordinates.isEmpty()) {
-            throw new IllegalArgumentException("Point with no coordinates.");
-        }
-
-        double[] coordinatesArray = new double[coordinates.size()];
-        for (int i = 0; i < coordinates.size(); i++) {
-            coordinatesArray[i] = coordinates.get(i);
-        }
-
-        return new Point(1, coordinatesArray);
-    }
-
     // Return the distance between this Point and Point p
     public double distance(Point p) throws IllegalArgumentException {
-
-        if (p.coordinates.length != this.coordinates.length){
-            throw new IllegalArgumentException();
-        }
 
         // Using Euclidian distance
         int len = p.coordinates.length;
@@ -117,17 +93,21 @@ public class Point implements Writable {
         double[] centerCoordinates = new double[size];
 
         for (int i = 0; i < size; i++) {
-            centerCoordinates[i] = firstPoint.coordinates[i] * firstPoint.weight;
+            centerCoordinates[i] = firstPoint.coordinates[i]; // * firstPoint.weight;
         }
-        int totalWeight = firstPoint.weight;
+        int totalWeight = 1; //firstPoint.weight;
+
+        if (centerCoordinates.length == 0){
+            throw new IllegalArgumentException("Array has size 0");
+        }
 
         // Sum of all points and weights
         while (iterator.hasNext()) {
             Point point = iterator.next();
             for (int i = 0; i < size; i++) {
-                centerCoordinates[i] += point.coordinates[i] * point.weight;
+                centerCoordinates[i] += point.coordinates[i]; // * point.weight;
             }
-            totalWeight += point.weight;
+            //totalWeight += point.weight;
         }
 
         // Average using weight
@@ -135,7 +115,7 @@ public class Point implements Writable {
             centerCoordinates[i] /= totalWeight;
         }
 
-        return new Point(totalWeight, centerCoordinates);
+        return new Point(1, centerCoordinates);
     }
 
     public double[] getCoordinates() {
@@ -159,5 +139,33 @@ public class Point implements Writable {
             coordinates[i] = dataInput.readDouble();
         }
         this.weight = dataInput.readInt();
+    }
+
+    /*
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (double d : coordinates) {
+            sb.append(d).append(",");
+        }
+        if(sb.length() == 0) {
+            throw new IllegalArgumentException("The point has no coordinates");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+     */
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        String prefix = "";
+        for (double d : this.coordinates) {
+            sb.append(prefix);
+            prefix = ",";
+            sb.append(d);
+        }
+        return sb.toString();
     }
 }

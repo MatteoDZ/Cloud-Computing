@@ -1,6 +1,8 @@
 package it.unipi.hadoop;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -18,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
@@ -55,15 +58,15 @@ public class Main {
 
             // each file should have one or more line formatted like this
             // ```
-            // key1 1.01;23.31;-12
+            // key1;1.01,23.31,-12
             // ```
 
             br.lines().forEach(line -> {
-                String[] splitted = line.split("\t");
+                String[] splitted = line.split(";");
                 if (splitted.length != 2){
                     return;
                 }
-                newcentroids[Integer.parseInt(splitted[0])] = Point.parsePoint(splitted[1]);
+                newcentroids[Integer.parseInt(splitted[0])] = Point.createPoint(splitted[1]);
             });
 
             // Close the input stream
@@ -73,12 +76,34 @@ public class Main {
         return newcentroids;
     }
 
+    private static ArrayList<Point> initializeCentroids(Configuration conf, String inputPath){
+        ArrayList<Point> initCentroids = new ArrayList<>();
+
+        for(int i = 0; i < conf.getInt("num_centroids", 0); i++){
+            List<String> lines = new ArrayList<>();
+            try {
+                lines = Files.readAllLines(Paths.get(inputPath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //Seleziona casualmente una delle righe del dataset
+            int row = (int) (Math.random() * 100000);//conf.getInt("NUM_POINTS", 0));
+            Point p = Point.createPoint(lines.get(row));
+            initCentroids.add(p);
+        }
+        return initCentroids;
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
         PrintWriter dump_stats = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.stats")));
 
         List<String> lines = Files.readAllLines(Paths.get(args[0]));
+        Path input = new Path(args[1]);
+        Path output = new Path(args[2]);
+
+        Configuration config = new Configuration();
 
         Point[] centroids = lines.stream().map(Point::createPoint).toArray(Point[]::new);
 
@@ -87,22 +112,25 @@ public class Main {
         final double tolerance = 0.00001;
         final int c_length = centroids.length;
 
+        System.out.println(c_length);
+
+        config.setInt("num_centroids", c_length);
+        centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
+
+
         Instant start = Instant.now();
         int iteration = 0;
 
         while(iteration < maxIter){
 
-            Configuration config = new Configuration();
-
             String[] centroidsValue = new String[c_length];
-            for (int i = 0; i < c_length; i++) {
+            for(int i = 0; i < c_length; i++){
                 centroidsValue[i] = centroids[i].toString();
+                System.out.println(centroidsValue[i]);
             }
 
-            config.setStrings("centroids", centroidsValue);
 
-            Path input = new Path(args[1]);
-            Path output = new Path(args[2]);
+            config.setStrings("centroids", centroidsValue);
 
             Job job = Job.getInstance(config);
 
@@ -139,10 +167,14 @@ public class Main {
             // read out the output
             Point[] newcentroids = extractResult(config, output, c_length);
 
+            if(newcentroids[0] == null || newcentroids[0].toString() == "") {
+                throw new IllegalArgumentException("New centroids are NULL");
+            }
+
             // get the distance between the new and the last centroids
             double distance = 0.0;
             for (int j = 0; j < c_length; j++) {
-                distance+=newcentroids[j].distance(centroids[j]);
+                distance += newcentroids[j].distance(centroids[j]);
             }
             distance/=c_length;
 

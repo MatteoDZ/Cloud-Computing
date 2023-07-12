@@ -16,7 +16,7 @@ public class Kmeans {
         protected void setup(Context context) throws IllegalArgumentException {
 
             // recover the config from the config
-            String[] centroidConfig = context.getConfiguration().getStrings("centroids", "");
+            String[] centroidConfig = context.getConfiguration().getStrings("centroids");
 
             centroids = new Point[centroidConfig.length];
             for (int i = 0; i < centroidConfig.length; i++) {
@@ -41,8 +41,15 @@ public class Kmeans {
                 return;
             }
 
+            double[] coord = p.getCoordinates();
+            if (coord.length == 0){
+                throw new IllegalArgumentException("Il punto creato non ha coordinate");
+            }
+
             // Find the nearest centroid for the data point
             int index = p.nearest(centroids);
+
+            System.out.println(p);
 
             // Emit the nearest centroid index and data point
             context.write(new IntWritable(index), p);
