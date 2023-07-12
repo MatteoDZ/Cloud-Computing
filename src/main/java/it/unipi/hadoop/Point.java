@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-public class Point implements WritableComparable {
+public class Point implements Writable {
 
     private int weight = 1;
     private double[] coordinates;
@@ -50,7 +50,7 @@ public class Point implements WritableComparable {
     // parsePoint given a point formatted in csv returns a point
     public static Point parsePoint(String value) throws IllegalArgumentException {
         List<Double> coordinates = new ArrayList<>();
-        StringTokenizer tokenizer = new StringTokenizer(value, ";");
+        StringTokenizer tokenizer = new StringTokenizer(value, ",");
         while (tokenizer.hasMoreTokens()) {
             coordinates.add(Double.parseDouble(tokenizer.nextToken()));
         }
@@ -159,11 +159,5 @@ public class Point implements WritableComparable {
             coordinates[i] = dataInput.readDouble();
         }
         this.weight = dataInput.readInt();
-    }
-
-    @Override
-    public int compareTo(Object o) {
-        if (o == o) {return 1;}
-        else {return 0;}
     }
 }

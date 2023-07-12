@@ -75,7 +75,6 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 
-
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
         PrintWriter dump_stats = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.stats")));
 
@@ -117,6 +116,9 @@ public class Main {
             job.setOutputKeyClass(IntWritable.class);
             job.setOutputValueClass(Point.class);
 
+            job.setMapOutputKeyClass(IntWritable.class);
+            job.setMapOutputValueClass(Point.class);
+
             job.setMaxReduceAttempts(c_length);
 
             FileInputFormat.addInputPath(job, input);
@@ -130,7 +132,8 @@ public class Main {
                 dump_stats.close();
                 dump.close();
                 // Errors
-                System.exit(104);
+                logErr("Error during iteration " + iteration);
+                System.exit(1);
             }
 
             // read out the output

@@ -9,7 +9,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import java.io.IOException;
 
 public class Kmeans {
-    public class KmeansMapper extends Mapper<Object, Text, IntWritable, Point>{
+    public static class KmeansMapper extends Mapper<Object, Text, IntWritable, Point>{
         private Point[] centroids;
 
         @Override
