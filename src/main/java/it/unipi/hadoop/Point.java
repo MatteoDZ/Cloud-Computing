@@ -90,9 +90,20 @@ public class Point implements Writable {
         // Get size from the first point
         Point firstPoint = iterator.next();
         final int size = firstPoint.size;
-        double[] centerCoordinates = new double[size];
+        double[] centerCoordinates = new double[firstPoint.coordinates.length];
 
-        for (int i = 0; i < size; i++) {
+        if (firstPoint.coordinates.length == 0) {
+            throw new IllegalArgumentException("First point has no coordinates");
+        }
+
+        /*
+        if (size == 0) {
+            throw new IllegalArgumentException("Point has size 0");
+        }
+
+         */
+
+        for (int i = 0; i < firstPoint.coordinates.length; i++) {
             centerCoordinates[i] = firstPoint.coordinates[i]; // * firstPoint.weight;
         }
         int totalWeight = 1; //firstPoint.weight;
@@ -120,6 +131,10 @@ public class Point implements Writable {
 
     public double[] getCoordinates() {
         return coordinates;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     @Override

@@ -105,17 +105,17 @@ public class Main {
 
         Configuration config = new Configuration();
 
-        Point[] centroids = lines.stream().map(Point::createPoint).toArray(Point[]::new);
+        //Point[] centroids = lines.stream().map(Point::createPoint).toArray(Point[]::new);
 
         // Constants
         final int maxIter = 100;
         final double tolerance = 0.00001;
-        final int c_length = centroids.length;
+        final int c_length = 6;
 
         System.out.println(c_length);
 
         config.setInt("num_centroids", c_length);
-        centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
+        Point[] centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
 
 
         Instant start = Instant.now();
@@ -137,7 +137,7 @@ public class Main {
             job.setJarByClass(Kmeans.class);
 
             job.setMapperClass(Kmeans.KmeansMapper.class);
-            job.setCombinerClass(Kmeans.KmeansReducer.class);
+            //job.setCombinerClass(Kmeans.KmeansReducer.class);
             job.setReducerClass(Kmeans.KmeansReducer.class);
             job.setNumReduceTasks(c_length);
 

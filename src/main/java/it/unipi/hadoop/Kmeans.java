@@ -37,8 +37,8 @@ public class Kmeans {
             Point p = Point.createPoint(value.toString());
 
             // Check if point is null
-            if (p == null) {
-                return;
+            if (p.getSize() == 0) {
+                throw new IllegalArgumentException("Point in MAP has size 0");
             }
 
             double[] coord = p.getCoordinates();
@@ -48,8 +48,6 @@ public class Kmeans {
 
             // Find the nearest centroid for the data point
             int index = p.nearest(centroids);
-
-            System.out.println(p);
 
             // Emit the nearest centroid index and data point
             context.write(new IntWritable(index), p);
