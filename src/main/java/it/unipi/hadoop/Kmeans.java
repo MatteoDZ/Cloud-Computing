@@ -6,7 +6,10 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 public class Kmeans {
     public static class KmeansMapper extends Mapper<Object, Text, IntWritable, Point>{
@@ -16,14 +19,14 @@ public class Kmeans {
         protected void setup(Context context) throws IllegalArgumentException {
 
             // recover the config from the config
-            String[] centroidConfig = context.getConfiguration().getStrings("centroids");
+            String[] centroidConfig = context.getConfiguration().getStrings("centroids", "");
 
-            centroids = new Point[centroidConfig.length];
-            for (int i = 0; i < centroidConfig.length; i++) {
+            centroids = new Point[centroidConfig.length/2];
+            for (int i = 0; i < centroidConfig.length/2; i++) {
                 if (centroidConfig[i].isEmpty()) {
                     throw new IllegalArgumentException("Centroid is empty");
                 }
-                centroids[i] = Point.createPoint(centroidConfig[i]);
+                centroids[i] = Point.createPoint(centroidConfig[i] + ',' + centroidConfig[i+6]);
             }
 
             if (centroids.length == 0) {
@@ -39,11 +42,6 @@ public class Kmeans {
             // Check if point is null
             if (p.getSize() == 0) {
                 throw new IllegalArgumentException("Point in MAP has size 0");
-            }
-
-            double[] coord = p.getCoordinates();
-            if (coord.length == 0){
-                throw new IllegalArgumentException("Il punto creato non ha coordinate");
             }
 
             // Find the nearest centroid for the data point

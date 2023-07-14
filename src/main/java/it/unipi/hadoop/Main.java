@@ -9,11 +9,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -21,6 +19,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -62,7 +61,8 @@ public class Main {
             // ```
 
             br.lines().forEach(line -> {
-                String[] splitted = line.split(";");
+                String[] splitted = line.split("\t");
+                System.out.println(splitted.length);
                 if (splitted.length != 2){
                     return;
                 }
@@ -99,18 +99,15 @@ public class Main {
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
         PrintWriter dump_stats = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.stats")));
 
-        List<String> lines = Files.readAllLines(Paths.get(args[0]));
         Path input = new Path(args[1]);
-        Path output = new Path(args[2]);
 
         Configuration config = new Configuration();
 
-        //Point[] centroids = lines.stream().map(Point::createPoint).toArray(Point[]::new);
-
         // Constants
-        final int maxIter = 100;
-        final double tolerance = 0.00001;
-        final int c_length = 6;
+        final int maxIter = 20;
+        final double tolerance = 0.1;
+        final int c_length = Integer.parseInt(args[0]);
+        int iteration = 0;
 
         System.out.println(c_length);
 
@@ -119,7 +116,7 @@ public class Main {
 
 
         Instant start = Instant.now();
-        int iteration = 0;
+
 
         while(iteration < maxIter){
 
@@ -150,10 +147,9 @@ public class Main {
             job.setMaxReduceAttempts(c_length);
 
             FileInputFormat.addInputPath(job, input);
-            FileOutputFormat.setOutputPath(job, output);
+            Path output_iter = new Path(args[2] + iteration);
+            FileOutputFormat.setOutputPath(job,  output_iter);
 
-            job.setInputFormatClass(TextInputFormat.class);
-            job.setOutputFormatClass(TextOutputFormat.class);
 
             boolean end = job.waitForCompletion(true);
             if(!end) {
@@ -165,11 +161,7 @@ public class Main {
             }
 
             // read out the output
-            Point[] newcentroids = extractResult(config, output, c_length);
-
-            if(newcentroids[0] == null || newcentroids[0].toString() == "") {
-                throw new IllegalArgumentException("New centroids are NULL");
-            }
+            Point[] newcentroids = extractResult(config, output_iter, c_length);
 
             // get the distance between the new and the last centroids
             double distance = 0.0;
