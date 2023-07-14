@@ -96,13 +96,6 @@ public class Point implements Writable {
             throw new IllegalArgumentException("First point has no coordinates");
         }
 
-        /*
-        if (size == 0) {
-            throw new IllegalArgumentException("Point has size 0");
-        }
-
-         */
-
         for (int i = 0; i < firstPoint.coordinates.length; i++) {
             centerCoordinates[i] = firstPoint.coordinates[i]; // * firstPoint.weight;
         }

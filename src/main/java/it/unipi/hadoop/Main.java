@@ -94,6 +94,47 @@ public class Main {
         return initCentroids;
     }
 
+    public static List<Point> initialize(ArrayList<Point> data, int k) {
+        List<Point> centroids = new ArrayList<>();
+        int rand = (int)(Math.random() * data.size());
+
+        // Add a randomly selected data point to the list
+        centroids.add(data.get(rand));
+
+        // Compute remaining k - 1 centroids
+        for (int c_id = 0; c_id < k - 1; c_id++) {
+            List<Double> dist = new ArrayList<>();
+            for (Point point : data) {
+                double d = Double.MAX_VALUE;
+
+                // Compute distance of 'point' from each of the previously selected centroid and store the minimum distance
+                for (Point centroid : centroids) {
+                    double temp_dist = point.distance(centroid);
+                    d = Math.min(d, temp_dist);
+                }
+                dist.add(d);
+            }
+            // Select data point with maximum distance as our next centroid
+            Point next_centroid = data.get(argmax(dist));
+            centroids.add(next_centroid);
+            dist.clear();
+        }
+        return centroids;
+    }
+
+    public static int argmax(List<Double> arr) {
+        int maxIndex = 0;
+        double maxVal = Double.MIN_VALUE;
+        for (int i = 0; i < arr.size(); i++) {
+            double val = arr.get(i);
+            if (val > maxVal) {
+                maxVal = val;
+                maxIndex = i;
+            }
+        }
+        return maxIndex;
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
@@ -112,8 +153,13 @@ public class Main {
         System.out.println(c_length);
 
         config.setInt("num_centroids", c_length);
-        Point[] centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
-
+        //Point[] centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
+        List<String> punti = Files.readAllLines(Paths.get(args[1]));
+        ArrayList<Point> points = new ArrayList<>();
+        for(String s : punti){
+            points.add(Point.createPoint(s));
+        }
+        List<Point> centroids = initialize(points, c_length);
 
         Instant start = Instant.now();
 
@@ -122,7 +168,7 @@ public class Main {
 
             String[] centroidsValue = new String[c_length];
             for(int i = 0; i < c_length; i++){
-                centroidsValue[i] = centroids[i].toString();
+                centroidsValue[i] = centroids.get(i).toString();
                 System.out.println(centroidsValue[i]);
             }
 
@@ -166,7 +212,7 @@ public class Main {
             // get the distance between the new and the last centroids
             double distance = 0.0;
             for (int j = 0; j < c_length; j++) {
-                distance += newcentroids[j].distance(centroids[j]);
+                distance += newcentroids[j].distance(centroids.get(j));
             }
             distance/=c_length;
 
@@ -180,20 +226,21 @@ public class Main {
 
             // if not do another iteration with the new centroids
 
-            for (int i = 0; i < centroids.length; i++) {
+            for (int i = 0; i < centroids.size(); i++) {
                 if (newcentroids[i] != null){
-                    centroids[i] = newcentroids[i];
+                    centroids.set(i, newcentroids[i]);
                 }
             }
+
+            for (Point centroid : centroids) {
+                dump.println(centroid.toString());
+            }
+            dump.println("");
 
             iteration++;
         }
 
         Duration execTime = Duration.between(start, Instant.now());
-
-        for (Point centroid : centroids) {
-            dump.println(centroid.toString());
-        }
         dump.close();
 
         dump_stats.println("Execution Time: " + execTime.toMillis() + "ms");
