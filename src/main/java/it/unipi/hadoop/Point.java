@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -51,9 +52,8 @@ public class Point implements Writable {
     public double distance(Point p) throws IllegalArgumentException {
 
         // Using Euclidian distance
-        int len = p.coordinates.length;
         double squaredSum = 0.0;
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < coordinates.length; i++) {
             squaredSum += Math.pow(this.coordinates[i] - p.coordinates[i], 2);
         }
         return Math.sqrt(squaredSum);
@@ -92,26 +92,19 @@ public class Point implements Writable {
         final int size = firstPoint.size;
         double[] centerCoordinates = new double[firstPoint.coordinates.length];
 
-        if (firstPoint.coordinates.length == 0) {
-            throw new IllegalArgumentException("First point has no coordinates");
-        }
 
         for (int i = 0; i < firstPoint.coordinates.length; i++) {
-            centerCoordinates[i] = firstPoint.coordinates[i]; // * firstPoint.weight;
+            centerCoordinates[i] = firstPoint.coordinates[i] * firstPoint.weight;
         }
-        int totalWeight = 1; //firstPoint.weight;
-
-        if (centerCoordinates.length == 0){
-            throw new IllegalArgumentException("Array has size 0");
-        }
+        int totalWeight = firstPoint.weight;
 
         // Sum of all points and weights
         while (iterator.hasNext()) {
             Point point = iterator.next();
             for (int i = 0; i < size; i++) {
-                centerCoordinates[i] += point.coordinates[i]; // * point.weight;
+                centerCoordinates[i] += point.coordinates[i] * point.weight;
             }
-            //totalWeight += point.weight;
+            totalWeight += point.weight;
         }
 
         // Average using weight

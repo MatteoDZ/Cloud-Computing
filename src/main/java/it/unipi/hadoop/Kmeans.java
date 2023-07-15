@@ -26,7 +26,7 @@ public class Kmeans {
                 if (centroidConfig[i].isEmpty()) {
                     throw new IllegalArgumentException("Centroid is empty");
                 }
-                centroids[i] = Point.createPoint(centroidConfig[i] + ',' + centroidConfig[i+6]);
+                centroids[i] = Point.createPoint(centroidConfig[i] + ',' + centroidConfig[i+3]);
             }
 
             if (centroids.length == 0) {
@@ -61,6 +61,8 @@ public class Kmeans {
             // set the new centroid as the average of the cluster
             Point newCentroid = Point.computeCentroid(cluster);
             context.write(key, newCentroid);
+
+            //context.write(new IntWritable((int) Math.round(Math.random()*64)), newCentroid);
         }
     }
 

@@ -44,7 +44,7 @@ public class Main {
 
         for (FileStatus file : fs.listStatus(output)) {
             // if not a file skip it
-            if (!file.isFile()) continue;
+            //if (!file.isFile()) continue;
 
             // skip the success file
             if (file.getPath().getName().endsWith("_SUCCESS")) {
@@ -61,8 +61,8 @@ public class Main {
             // ```
 
             br.lines().forEach(line -> {
+                System.out.println(line);
                 String[] splitted = line.split("\t");
-                System.out.println(splitted.length);
                 if (splitted.length != 2){
                     return;
                 }
@@ -145,12 +145,10 @@ public class Main {
         Configuration config = new Configuration();
 
         // Constants
-        final int maxIter = 20;
+        final int maxIter = 3;
         final double tolerance = 0.1;
         final int c_length = Integer.parseInt(args[0]);
         int iteration = 0;
-
-        System.out.println(c_length);
 
         config.setInt("num_centroids", c_length);
         //Point[] centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
@@ -169,11 +167,20 @@ public class Main {
             String[] centroidsValue = new String[c_length];
             for(int i = 0; i < c_length; i++){
                 centroidsValue[i] = centroids.get(i).toString();
-                System.out.println(centroidsValue[i]);
             }
 
-
             config.setStrings("centroids", centroidsValue);
+            String[] test = config.getStrings("centroids");
+
+            System.out.println("STAMPA CENTROIDI\n");
+            for (String s : centroidsValue){
+                System.out.println(s);
+            }
+            System.out.println("INIZIO CONTROLLO STRINGHE CENTROIDI\n");
+            for (String s : test){
+                System.out.println(s);
+            }
+            System.out.println("FINE CONTROLLO STRINGHE CENTROIDI\n");
 
             Job job = Job.getInstance(config);
 
@@ -206,6 +213,11 @@ public class Main {
                 System.exit(1);
             }
 
+            System.out.println("Controlliamo i centroidi vecchi");
+            for(Point p: centroids){
+                System.out.println(p);
+            }
+            System.out.println("Controlliamo i centroidi nuovi");
             // read out the output
             Point[] newcentroids = extractResult(config, output_iter, c_length);
 
@@ -213,6 +225,7 @@ public class Main {
             double distance = 0.0;
             for (int j = 0; j < c_length; j++) {
                 distance += newcentroids[j].distance(centroids.get(j));
+                //System.out.format("Old centroid at %d: %s; New centroid at %d: %s; distance = %f \n", j,centroids.get(j),j,newcentroids[j],distance);
             }
             distance/=c_length;
 
