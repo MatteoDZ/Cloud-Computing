@@ -14,7 +14,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 public class Point implements Writable {
 
-    private int weight = 1;
+    private int weight = 1; //Constant, since all count the same
     private double[] coordinates;
     private int size;
     public Point() {
@@ -27,7 +27,7 @@ public class Point implements Writable {
         this.size = coordinates.length;
     }
 
-    // Create new point from string
+    // Create new point from string, used in main to convert from csv to java structure
     public static Point createPoint(String value) throws IllegalArgumentException {
 
         List<Double> coordinates = new ArrayList<>();
@@ -98,7 +98,7 @@ public class Point implements Writable {
 
         // Get size from the first point
         Point firstPoint = iterator.next();
-        // TODO: Se metto firstPoint.size al posto di firstPoint.coordinates.length non funziona più nulla
+        // If we use firstPoint.size instead of firstPoint.coordinates.length everything stops working
         final int size = firstPoint.coordinates.length;
         double[] centerCoordinates = new double[firstPoint.coordinates.length];
 
@@ -120,7 +120,7 @@ public class Point implements Writable {
         for (int i = 0; i < size; i++) {
             centerCoordinates[i] /= totalWeight;
             if (centerCoordinates[i] > 15.0 || centerCoordinates[i] < -15.0){
-                throw new IllegalArgumentException("COORDINATA TROPPO GRANDE");
+                throw new IllegalArgumentException("Coordinate too big");
             }
         }
 
@@ -155,22 +155,6 @@ public class Point implements Writable {
         }
         this.weight = dataInput.readInt();
     }
-
-    /*
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (double d : coordinates) {
-            sb.append(d).append(",");
-        }
-        if(sb.length() == 0) {
-            throw new IllegalArgumentException("The point has no coordinates");
-        }
-        sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
-    }
-
-     */
 
     @Override
     public String toString() {

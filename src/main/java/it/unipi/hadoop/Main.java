@@ -27,13 +27,11 @@ public class Main {
     private static void log(String x){
         System.out.println("[\033[1;96mKMEANS\033[0m] " + x);
     }
-
     private static void logErr(String x){
         System.out.println("[\033[1;91mKMEANS\033[0m] " + x);
     }
 
-    // extractResult returns an array of point which are the result of the last
-    // hadoop run
+    // extractResult returns an array of point which are the result of the last hadoop run
     public static Point[] extractResult(Configuration conf, Path output, int K) throws IOException {
 
         // extract the hadoop's run outputs
@@ -70,10 +68,10 @@ public class Main {
         List<Point> centroids = new ArrayList<>();
         int rand = (int)(Math.random() * data.size());
 
-        // Add a randomly selected data point to the list
+        // Add a randomly selected data point to the list (only the first)
         centroids.add(data.get(rand));
 
-        // Compute remaining k - 1 centroids
+        // Compute remaining k-1 centroids
         for (int c_id = 0; c_id < k - 1; c_id++) {
             List<Double> dist = new ArrayList<>();
             for (Point point : data) {
@@ -94,6 +92,7 @@ public class Main {
         return centroids;
     }
 
+    //To select max distance
     public static int argmax(List<Double> arr) {
         int maxIndex = 0;
         double maxVal = Double.MIN_VALUE;
@@ -107,76 +106,82 @@ public class Main {
         return maxIndex;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-
-        /*
-        args[0] is the input
-        args[1] is the output
+    /*
+        Following input args when we executed the .jar file
+        args[0] is the input path
+        args[1] is the output path
         args[2] is the number of centroids
         args[3] is the number of iterations
         args[4] is the tolerance
          */
+    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 
-
+        //Sets files to store results of the K-means algorithm
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
         PrintWriter dump_stats = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.stats")));
 
-        Path input = new Path(args[0]);
-        Configuration config = new Configuration();
+        Configuration config = new Configuration(); //New configuration file to reuse parameters along the code
 
         // Constants
-        final int maxIter = Integer.parseInt(args[3]);
-        final double tolerance = Double.parseDouble(args[4]);
-        final int c_length = Integer.parseInt(args[2]);
-        int iteration = 0;
+        Path input = new Path(args[0]); //input path
+        Path output = new Path(args[1]); //output path
+        final int c_length = Integer.parseInt(args[2]); //number of centroids
+        final int maxIter = Integer.parseInt(args[3]); //number of iterations
+        final double tolerance = Double.parseDouble(args[4]); //tolerance = threshold desired to stop iterations
+        int iteration = 0; //iteration we are at
 
-        config.setInt("num_centroids", c_length);
-        List<String> punti = Files.readAllLines(Paths.get(args[0]));
+        //We terminate the program until threshold is reached or maxIter is reached
 
-        String[] splitted = punti.get(0).split(",");
+        config.setInt("num_centroids", c_length); //Set in num_centroids the number of centroids
+        List<String> points = Files.readAllLines(Paths.get(args[0]));
+
+        //Loads the dimension of the points
+        String[] splitted = points.get(0).split(",");
         config.setInt("dimensions", splitted.length);
 
-        ArrayList<Point> points = new ArrayList<>();
-        for(String s : punti){
-            points.add(Point.createPoint(s));
+        //We convert from a list of strings to a list of points to ease the work
+        ArrayList<Point> pointsArr = new ArrayList<>();
+        for(String s : points){
+            pointsArr.add(Point.createPoint(s));
         }
-        List<Point> centroids = initialize(points, c_length);
 
+        //We find the initial centroids to start K-means
+        List<Point> centroids = initialize(pointsArr, c_length);
+
+        //Start to record time for execution
         Instant start = Instant.now();
 
 
         while(iteration < maxIter){
 
+            //To store the centroids values in the config file we bring them back as strings
             String[] centroidsValue = new String[c_length];
             for(int i = 0; i < c_length; i++){
                 centroidsValue[i] = centroids.get(i).toString();
             }
 
             config.setStrings("centroids", centroidsValue);
-            String[] test = config.getStrings("centroids");
+            //DEBUG
+            //String[] test = config.getStrings("centroids");
 
+            //Hadoop job setup
             Job job = Job.getInstance(config);
-
             job.setJarByClass(Kmeans.class);
-
             job.setMapperClass(Kmeans.KmeansMapper.class);
             //job.setCombinerClass(Kmeans.KmeansReducer.class);
             job.setReducerClass(Kmeans.KmeansReducer.class);
             job.setNumReduceTasks(c_length);
-
             job.setOutputKeyClass(IntWritable.class);
             job.setOutputValueClass(Point.class);
-
             job.setMapOutputKeyClass(IntWritable.class);
             job.setMapOutputValueClass(Point.class);
-
             job.setMaxReduceAttempts(c_length);
 
             FileInputFormat.addInputPath(job, input);
-            Path output_iter = new Path(args[1] + iteration);
+            Path output_iter = new Path(output + Integer.toString(iteration));
             FileOutputFormat.setOutputPath(job,  output_iter);
 
-
+            //Wait for all hadoop jobs to finish
             boolean end = job.waitForCompletion(true);
             if(!end) {
                 dump_stats.close();
@@ -186,6 +191,7 @@ public class Main {
                 System.exit(1);
             }
 
+            //DEBUG
             // read out the output
             Point[] newcentroids = extractResult(config, output_iter, c_length);
 
@@ -206,29 +212,29 @@ public class Main {
             }
 
             // if not do another iteration with the new centroids
-
             for (int i = 0; i < centroids.size(); i++) {
                 if (newcentroids[i] != null){
                     centroids.set(i, newcentroids[i]);
                 }
             }
 
+            //Record stats
             for (Point centroid : centroids) {
                 dump.println(centroid.toString());
             }
             dump.println("");
 
+            //Go to next iteration
             iteration++;
         }
 
+        //End recording of time execution
         Duration execTime = Duration.between(start, Instant.now());
-        dump.close();
+        dump.close(); //CLose file
 
+        //Record stats
         dump_stats.println("Execution Time: " + execTime.toMillis() + "ms");
         dump_stats.println("Number of Iterations: " + (iteration + 1));
-        dump_stats.close();
-
-
-        // Numero di reducer = numero di cluster o comunque logica simile
+        dump_stats.close(); //Close file
     }
 }

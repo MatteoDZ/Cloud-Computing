@@ -12,7 +12,6 @@ public class Kmeans {
     public static class KmeansMapper extends Mapper<Object, Text, IntWritable, Point>{
         private Point[] centroids;
         private Point[] combiner;
-
         private int[] counter;
 
         @Override
