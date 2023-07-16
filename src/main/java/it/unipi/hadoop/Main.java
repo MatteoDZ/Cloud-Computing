@@ -24,8 +24,6 @@ import java.util.List;
 
 public class Main {
 
-    //TODO: CAPIRE DOVE LI HANNO TROVATI
-
     private static void log(String x){
         System.out.println("[\033[1;96mKMEANS\033[0m] " + x);
     }
@@ -43,8 +41,6 @@ public class Main {
         Point[] newcentroids = new Point[K];
 
         for (FileStatus file : fs.listStatus(output)) {
-            // if not a file skip it
-            //if (!file.isFile()) continue;
 
             // skip the success file
             if (file.getPath().getName().endsWith("_SUCCESS")) {
@@ -55,13 +51,7 @@ public class Main {
             Path filePath = file.getPath();
             BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(filePath)));
 
-            // each file should have one or more line formatted like this
-            // ```
-            // key1;1.01,23.31,-12
-            // ```
-
             br.lines().forEach(line -> {
-                System.out.println(line);
                 String[] splitted = line.split("\t");
                 if (splitted.length != 2){
                     return;
@@ -74,24 +64,6 @@ public class Main {
         }
 
         return newcentroids;
-    }
-
-    private static ArrayList<Point> initializeCentroids(Configuration conf, String inputPath){
-        ArrayList<Point> initCentroids = new ArrayList<>();
-
-        for(int i = 0; i < conf.getInt("num_centroids", 0); i++){
-            List<String> lines = new ArrayList<>();
-            try {
-                lines = Files.readAllLines(Paths.get(inputPath));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //Seleziona casualmente una delle righe del dataset
-            int row = (int) (Math.random() * 100000);//conf.getInt("NUM_POINTS", 0));
-            Point p = Point.createPoint(lines.get(row));
-            initCentroids.add(p);
-        }
-        return initCentroids;
     }
 
     public static List<Point> initialize(ArrayList<Point> data, int k) {
@@ -137,22 +109,33 @@ public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
 
+        /*
+        args[0] is the input
+        args[1] is the output
+        args[2] is the number of centroids
+        args[3] is the number of iterations
+        args[4] is the tolerance
+         */
+
+
         PrintWriter dump = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.csv")));
         PrintWriter dump_stats = new PrintWriter(new BufferedWriter(new FileWriter("hadoop_out.stats")));
 
-        Path input = new Path(args[1]);
-
+        Path input = new Path(args[0]);
         Configuration config = new Configuration();
 
         // Constants
-        final int maxIter = 3;
-        final double tolerance = 0.1;
-        final int c_length = Integer.parseInt(args[0]);
+        final int maxIter = Integer.parseInt(args[3]);
+        final double tolerance = Double.parseDouble(args[4]);
+        final int c_length = Integer.parseInt(args[2]);
         int iteration = 0;
 
         config.setInt("num_centroids", c_length);
-        //Point[] centroids = initializeCentroids(config, args[1]).toArray(new Point[c_length]);
-        List<String> punti = Files.readAllLines(Paths.get(args[1]));
+        List<String> punti = Files.readAllLines(Paths.get(args[0]));
+
+        String[] splitted = punti.get(0).split(",");
+        config.setInt("dimensions", splitted.length);
+
         ArrayList<Point> points = new ArrayList<>();
         for(String s : punti){
             points.add(Point.createPoint(s));
@@ -172,16 +155,6 @@ public class Main {
             config.setStrings("centroids", centroidsValue);
             String[] test = config.getStrings("centroids");
 
-            System.out.println("STAMPA CENTROIDI\n");
-            for (String s : centroidsValue){
-                System.out.println(s);
-            }
-            System.out.println("INIZIO CONTROLLO STRINGHE CENTROIDI\n");
-            for (String s : test){
-                System.out.println(s);
-            }
-            System.out.println("FINE CONTROLLO STRINGHE CENTROIDI\n");
-
             Job job = Job.getInstance(config);
 
             job.setJarByClass(Kmeans.class);
@@ -200,7 +173,7 @@ public class Main {
             job.setMaxReduceAttempts(c_length);
 
             FileInputFormat.addInputPath(job, input);
-            Path output_iter = new Path(args[2] + iteration);
+            Path output_iter = new Path(args[1] + iteration);
             FileOutputFormat.setOutputPath(job,  output_iter);
 
 
@@ -213,11 +186,6 @@ public class Main {
                 System.exit(1);
             }
 
-            System.out.println("Controlliamo i centroidi vecchi");
-            for(Point p: centroids){
-                System.out.println(p);
-            }
-            System.out.println("Controlliamo i centroidi nuovi");
             // read out the output
             Point[] newcentroids = extractResult(config, output_iter, c_length);
 
@@ -225,7 +193,7 @@ public class Main {
             double distance = 0.0;
             for (int j = 0; j < c_length; j++) {
                 distance += newcentroids[j].distance(centroids.get(j));
-                //System.out.format("Old centroid at %d: %s; New centroid at %d: %s; distance = %f \n", j,centroids.get(j),j,newcentroids[j],distance);
+                System.out.format("Old centroid at %d: %s; New centroid at %d: %s; distance = %f \n", j,centroids.get(j),j,newcentroids[j],distance);
             }
             distance/=c_length;
 

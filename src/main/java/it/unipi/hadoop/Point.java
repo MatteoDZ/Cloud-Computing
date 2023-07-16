@@ -48,6 +48,15 @@ public class Point implements Writable {
         return new Point(1, coordinatesArray);
     }
 
+    public Point sumPoints(Point p) {
+        int weight = this.weight + p.weight;
+        double[] coords = new double[size];
+        for (int i = 0; i < size; i++) {
+            coords[i] = this.coordinates[i] + p.coordinates[i];
+        }
+        return new Point(weight, coords);
+    }
+
     // Return the distance between this Point and Point p
     public double distance(Point p) throws IllegalArgumentException {
 
@@ -89,12 +98,12 @@ public class Point implements Writable {
 
         // Get size from the first point
         Point firstPoint = iterator.next();
-        final int size = firstPoint.size;
+        // TODO: Se metto firstPoint.size al posto di firstPoint.coordinates.length non funziona più nulla
+        final int size = firstPoint.coordinates.length;
         double[] centerCoordinates = new double[firstPoint.coordinates.length];
 
-
         for (int i = 0; i < firstPoint.coordinates.length; i++) {
-            centerCoordinates[i] = firstPoint.coordinates[i] * firstPoint.weight;
+            centerCoordinates[i] = firstPoint.coordinates[i];
         }
         int totalWeight = firstPoint.weight;
 
@@ -102,7 +111,7 @@ public class Point implements Writable {
         while (iterator.hasNext()) {
             Point point = iterator.next();
             for (int i = 0; i < size; i++) {
-                centerCoordinates[i] += point.coordinates[i] * point.weight;
+                centerCoordinates[i] += point.coordinates[i];
             }
             totalWeight += point.weight;
         }
@@ -110,6 +119,9 @@ public class Point implements Writable {
         // Average using weight
         for (int i = 0; i < size; i++) {
             centerCoordinates[i] /= totalWeight;
+            if (centerCoordinates[i] > 15.0 || centerCoordinates[i] < -15.0){
+                throw new IllegalArgumentException("COORDINATA TROPPO GRANDE");
+            }
         }
 
         return new Point(1, centerCoordinates);
@@ -122,6 +134,8 @@ public class Point implements Writable {
     public int getSize() {
         return size;
     }
+
+    public int getWeight() {return weight;}
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
