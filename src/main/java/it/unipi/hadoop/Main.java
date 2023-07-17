@@ -169,7 +169,7 @@ public class Main {
             job.setJarByClass(Kmeans.class);
             job.setMapperClass(Kmeans.KmeansMapper.class);
             job.setReducerClass(Kmeans.KmeansReducer.class);
-            job.setNumReduceTasks(c_length);
+            job.setNumReduceTasks(3);
             job.setOutputKeyClass(IntWritable.class);
             job.setOutputValueClass(Point.class);
             job.setMapOutputKeyClass(IntWritable.class);
