@@ -207,6 +207,9 @@ public class Main {
             // if it's less than the stopping threshold exit gracefully
             if(distance < tolerance){
                 log("Stopping Threshold reached");
+                for(Point p: newcentroids){
+                    dump.println(p.toString());
+                }
                 break;
             }
 
