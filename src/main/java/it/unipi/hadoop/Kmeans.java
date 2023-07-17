@@ -48,7 +48,6 @@ public class Kmeans {
         // Map method
         @Override
         protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            super.map(key, value, context);
             Point p = Point.createPoint(value.toString());
 
             // Check if point is null
