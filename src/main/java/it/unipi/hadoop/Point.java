@@ -48,6 +48,7 @@ public class Point implements Writable {
         return new Point(1, coordinatesArray);
     }
 
+    //It is used in mappercombiner to sum weights and coordinates
     public Point sumPoints(Point p) {
         int weight = this.weight + p.weight;
         double[] coords = new double[size];
@@ -57,7 +58,7 @@ public class Point implements Writable {
         return new Point(weight, coords);
     }
 
-    // Return the distance between this Point and Point p
+    // Return the distance between this Point and Point p --> Euclidian distance
     public double distance(Point p) throws IllegalArgumentException {
 
         // Using Euclidian distance
@@ -68,7 +69,7 @@ public class Point implements Writable {
         return Math.sqrt(squaredSum);
     }
 
-    // Return the nearest point
+    // Return the index of the nearest centroid
     public int nearest(Point[] points) throws IllegalArgumentException {
 
         if (points.length == 0){
@@ -89,6 +90,7 @@ public class Point implements Writable {
         return nearest;
     }
 
+    //Create centroids through computations
     public static Point computeCentroid(Iterable<Point> points) throws IllegalArgumentException {
 
         Iterator<Point> iterator = points.iterator();
@@ -119,9 +121,10 @@ public class Point implements Writable {
         // Average using weight
         for (int i = 0; i < size; i++) {
             centerCoordinates[i] /= totalWeight;
-            if (centerCoordinates[i] > 15.0 || centerCoordinates[i] < -15.0){
+            //DEBUG
+            /*if (centerCoordinates[i] > 15.0 || centerCoordinates[i] < -15.0){
                 throw new IllegalArgumentException("Coordinate too big");
-            }
+            }*/
         }
 
         return new Point(1, centerCoordinates);
@@ -137,6 +140,7 @@ public class Point implements Writable {
 
     public int getWeight() {return weight;}
 
+    //To serialize data
     @Override
     public void write(DataOutput dataOutput) throws IOException {
         dataOutput.writeInt(coordinates.length);
@@ -146,6 +150,7 @@ public class Point implements Writable {
         dataOutput.writeInt(this.weight);
     }
 
+    //To deserialize data
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         int length = dataInput.readInt();

@@ -7,16 +7,16 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-
 public class Kmeans {
     public static class KmeansMapper extends Mapper<Object, Text, IntWritable, Point>{
         private Point[] centroids;
         private Point[] combiner;
         private int[] counter;
 
+        //Setup structures that we use
         @Override
-        protected void setup(Context context) throws IllegalArgumentException {
-
+        protected void setup(Context context) throws IllegalArgumentException, IOException, InterruptedException {
+            super.setup(context);
             // recover the config from the config
             String[] centroidConfig = context.getConfiguration().getStrings("centroids", "");
             int numDimensions = context.getConfiguration().getInt("dimensions", 0);
@@ -34,9 +34,8 @@ public class Kmeans {
                     throw new IllegalArgumentException("Centroid is empty");
                 }
                 String centroid = "";
-                //centroids[i] = Point.createPoint(centroidConfig[2*i] + ',' + centroidConfig[(2*i)+1]);
                 for (int j = 0; j < numDimensions; j++) {
-                    centroid = centroid.concat(centroidConfig[(2*i) +j] + ",");
+                    centroid = centroid.concat(centroidConfig[(numDimensions*i) +j] + ",");
                 }
                 centroids[i] = Point.createPoint(centroid.substring(0, centroid.length()-1));
             }
@@ -49,6 +48,7 @@ public class Kmeans {
         // Map method
         @Override
         protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            super.map(key, value, context);
             Point p = Point.createPoint(value.toString());
 
             // Check if point is null
@@ -67,8 +67,7 @@ public class Kmeans {
                 combiner[index] = partial.sumPoints(p);
             }
             counter[index]++;
-            // Emit the nearest centroid index and data point
-            //context.write(new IntWritable(index), p);
+            //Emit will be in cleanup
         }
 
         @Override
@@ -76,11 +75,10 @@ public class Kmeans {
             super.cleanup(context);
             for (int i = 0; i < combiner.length; i++) {
                 if (combiner[i].getWeight() != counter[i]){
-                    throw new IllegalArgumentException("IL PESO È SBAGLIATO");
+                    throw new IllegalArgumentException("Weight is wrong");
                 }
                 context.write(new IntWritable(i), combiner[i]);
             }
-
         }
     }
     public static class KmeansReducer extends Reducer<IntWritable, Point, IntWritable, Point> {
@@ -93,11 +91,6 @@ public class Kmeans {
             // set the new centroid as the average of the cluster
             Point newCentroid = Point.computeCentroid(cluster);
             context.write(key, newCentroid);
-
-            //context.write(new IntWritable((int) Math.round(Math.random()*64)), newCentroid);
         }
     }
-
-
-
 }

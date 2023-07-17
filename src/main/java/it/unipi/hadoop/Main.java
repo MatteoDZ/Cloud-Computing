@@ -168,7 +168,6 @@ public class Main {
             Job job = Job.getInstance(config);
             job.setJarByClass(Kmeans.class);
             job.setMapperClass(Kmeans.KmeansMapper.class);
-            //job.setCombinerClass(Kmeans.KmeansReducer.class);
             job.setReducerClass(Kmeans.KmeansReducer.class);
             job.setNumReduceTasks(c_length);
             job.setOutputKeyClass(IntWritable.class);
@@ -191,7 +190,6 @@ public class Main {
                 System.exit(1);
             }
 
-            //DEBUG
             // read out the output
             Point[] newcentroids = extractResult(config, output_iter, c_length);
 
@@ -199,15 +197,16 @@ public class Main {
             double distance = 0.0;
             for (int j = 0; j < c_length; j++) {
                 distance += newcentroids[j].distance(centroids.get(j));
-                System.out.format("Old centroid at %d: %s; New centroid at %d: %s; distance = %f \n", j,centroids.get(j),j,newcentroids[j],distance);
+                //DEBUG
+                //System.out.format("Old centroid at %d: %s; New centroid at %d: %s; distance = %f \n", j,centroids.get(j),j,newcentroids[j],distance);
             }
             distance/=c_length;
 
             log("Current distance: " + distance);
 
-            // if it's less then the stoppingTreshold exit gracefully
+            // if it's less than the stopping threshold exit gracefully
             if(distance < tolerance){
-                log("StoppingTreshold reached");
+                log("Stopping Threshold reached");
                 break;
             }
 
