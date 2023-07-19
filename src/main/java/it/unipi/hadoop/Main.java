@@ -202,11 +202,11 @@ public class Main {
             }
             distance/=c_length;
 
-            log("Current distance: " + distance);
+            log("Current distance: " + distance + ", > of tolerance by: " + (distance - tolerance));
 
             // if it's less than the stopping threshold exit gracefully
             if(distance < tolerance){
-                log("Stopping Threshold reached");
+                log("Stopping. Threshold reached after " + (iteration+1) + " iterations.");
                 for(Point p: newcentroids){
                     dump.println(p.toString());
                 }
